@@ -1,12 +1,33 @@
 'use strict';
 
-window.addEventListener('load', async () => {
+(async () => {
   const ul = document.querySelector('ul');
   const rfrsh = document.querySelector('#refresh');
   const form = document.querySelector('form');
-  const username = 'TeemuR';
+  const username = prompt('Enter username');
   const greeting = form.elements.greeting;
   console.log('hello');
+
+  if('serviceWorker' in navigator){
+    try{
+      await navigator.serviceWorker.register('./sw.js');
+      const swRegistration = await navigator.serviceWorker.ready;
+      if('sync' in swRegistration) {
+        form.addEventListener('submit', async (event)=>{
+          event.preventDefault();
+          const message = {
+            username,
+            greeting: greeting.value,
+          };
+
+          const ready = await saveData('outbox', message);
+          ready && (await swRegistration.sync.register('send-message'));
+        });
+      }
+    }catch(error){
+      console.log('sw', error);
+    }
+  }
 
   const init = async () => {
     const data = [];
@@ -29,4 +50,4 @@ window.addEventListener('load', async () => {
   init();
 
   rfrsh.addEventListener('click', init);
-});
+})();
